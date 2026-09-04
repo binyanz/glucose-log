@@ -7,6 +7,7 @@ import { formatMmol, mgdlToMmol, parseMgdl } from '../lib/glucose';
 import { addReading } from '../lib/db';
 import { TAGS, TAG_LABELS, type Tag } from '../lib/types';
 import { Card, Chip, Label } from '../components/ui';
+import { Kitty } from '../components/Mascots';
 import type { Theme } from '../theme';
 
 export function LogScreen({ theme, onSaved }: { theme: Theme; onSaved: () => void }) {
@@ -28,7 +29,7 @@ export function LogScreen({ theme, onSaved }: { theme: Theme; onSaved: () => voi
     const parsed = parseMgdl(input);
     if (!parsed.ok) return;
     await addReading(parsed.mgdl, Date.now(), tag, null);
-    setSaved(`Saved ${parsed.mgdl} mg/dL · ${formatMmol(mgdlToMmol(parsed.mgdl))} mmol/L`);
+    setSaved(`Saved! ${parsed.mgdl} mg/dL · ${formatMmol(mgdlToMmol(parsed.mgdl))} mmol/L 🐾`);
     setInput('');
     Keyboard.dismiss();
     onSaved();
@@ -38,7 +39,7 @@ export function LogScreen({ theme, onSaved }: { theme: Theme; onSaved: () => voi
   return (
     <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
       <Card theme={theme}>
-        <Label theme={theme}>METER READING</Label>
+        <Label theme={theme}>YOUR METER SAYS</Label>
         <View style={styles.row}>
           <TextInput
             style={[styles.input, {
@@ -59,9 +60,9 @@ export function LogScreen({ theme, onSaved }: { theme: Theme; onSaved: () => voi
 
         <View style={[styles.divider, { backgroundColor: theme.rule }]} />
 
-        <Label theme={theme}>CONVERTED</Label>
+        <Label theme={theme}>WHICH IS</Label>
         <View style={styles.row}>
-          <Text style={[styles.result, { color: mmol === null ? theme.muted : theme.accent }]}>
+          <Text style={[styles.result, { color: mmol === null ? theme.muted : theme.pink }]}>
             {mmol === null ? '—' : formatMmol(mmol)}
           </Text>
           <Text style={[styles.unit, { color: theme.muted }]}>mmol/L</Text>
@@ -69,11 +70,11 @@ export function LogScreen({ theme, onSaved }: { theme: Theme; onSaved: () => voi
       </Card>
 
       <Text style={[styles.hint, { color: error ? theme.danger : theme.muted }]}>
-        {error ?? 'Enter the number shown on your meter.'}
+        {error ?? 'Pop in the number from your meter and I will do the maths.'}
       </Text>
 
       <Card theme={theme}>
-        <Label theme={theme}>WHEN WAS IT TAKEN</Label>
+        <Label theme={theme}>WHEN WAS THIS?</Label>
         <View style={styles.chips}>
           {TAGS.map((t) => (
             <Chip
@@ -89,16 +90,21 @@ export function LogScreen({ theme, onSaved }: { theme: Theme; onSaved: () => voi
         disabled={!canSave}
         accessibilityRole="button"
         style={[styles.save, {
-          backgroundColor: canSave ? theme.accent : theme.rule,
+          backgroundColor: canSave ? theme.pink : theme.rule,
           opacity: canSave ? 1 : 0.6,
         }]}
       >
         <Text style={[styles.saveText, { color: canSave ? theme.chipOnText : theme.muted }]}>
-          Save reading
+          Save it ✨
         </Text>
       </TouchableOpacity>
 
-      {saved ? <Text style={[styles.saved, { color: theme.accent }]}>{saved}</Text> : null}
+      {saved ? (
+        <View style={styles.savedRow}>
+          <Kitty size={34} theme={theme} />
+          <Text style={[styles.saved, { color: theme.pink }]}>{saved}</Text>
+        </View>
+      ) : null}
     </ScrollView>
   );
 }
@@ -108,14 +114,16 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
   input: {
     flex: 1, fontSize: 42, fontWeight: '700', fontVariant: ['tabular-nums'],
-    borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8,
+    borderWidth: 1.5, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 10,
   },
   result: { flex: 1, fontSize: 42, fontWeight: '700', fontVariant: ['tabular-nums'], paddingHorizontal: 14 },
   unit: { fontSize: 14, fontWeight: '600', paddingBottom: 14 },
   divider: { height: 1, marginVertical: 4 },
   hint: { fontSize: 13, lineHeight: 18, paddingHorizontal: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  save: { borderRadius: 12, paddingVertical: 15, alignItems: 'center' },
+  save: { borderRadius: 22, paddingVertical: 16, alignItems: 'center',
+    shadowColor: '#E0709B', shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 5 } },
   saveText: { fontSize: 16, fontWeight: '700' },
-  saved: { fontSize: 13, textAlign: 'center', fontWeight: '600' },
+  saved: { fontSize: 13, fontWeight: '700', flexShrink: 1 },
+  savedRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
 });

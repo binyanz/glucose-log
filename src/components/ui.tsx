@@ -50,9 +50,10 @@ export function Stat({ theme, label, value, unit }: { theme: Theme; label: strin
 }
 
 const s = StyleSheet.create({
-  card: { borderRadius: 14, borderWidth: 1, padding: 16, gap: 10 },
-  label: { fontSize: 11, letterSpacing: 1.3, fontWeight: '600' },
-  chip: { paddingHorizontal: 13, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
+  card: { borderRadius: 22, borderWidth: 1, padding: 17, gap: 10,
+    shadowColor: '#B98BA6', shadowOpacity: 0.16, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
+  label: { fontSize: 11, letterSpacing: 1.2, fontWeight: '800' },
+  chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1.5 },
   chipSmall: { paddingHorizontal: 10, paddingVertical: 5 },
   chipText: { fontSize: 12.5, fontWeight: '600' },
   chipTextSmall: { fontSize: 11.5 },

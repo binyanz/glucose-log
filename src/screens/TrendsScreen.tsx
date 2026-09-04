@@ -5,6 +5,7 @@ import { Card, Chip, Label, Stat } from '../components/ui';
 import { averagesByTag, summarize, withinDays } from '../lib/stats';
 import { formatMgdl, formatMmol, mgdlToMmol } from '../lib/glucose';
 import { TAGS, TAG_LABELS, type Reading, type TargetRange } from '../lib/types';
+import { Puppy } from '../components/Mascots';
 import type { Theme } from '../theme';
 
 const RANGES = [
@@ -38,7 +39,7 @@ export function TrendsScreen({
       </View>
 
       <Card theme={theme}>
-        <Label theme={theme}>TREND · mmol/L</Label>
+        <Label theme={theme}>HOW IT'S GOING · mmol/L</Label>
         <Chart
           readings={inRange} target={target} theme={theme}
           width={width - 32 - 32} height={190}
@@ -51,7 +52,7 @@ export function TrendsScreen({
       </Card>
 
       <Card theme={theme}>
-        <Label theme={theme}>SUMMARY</Label>
+        <Label theme={theme}>THE NUMBERS</Label>
         <View style={styles.stats}>
           <Stat theme={theme} label="Readings" value={String(summary.count)} />
           <Stat theme={theme} label="Average" value={both(summary.avgMgdl)} unit="mmol/L" />
@@ -70,7 +71,10 @@ export function TrendsScreen({
       </Card>
 
       <Card theme={theme}>
-        <Label theme={theme}>AVERAGE BY TIME OF DAY</Label>
+        <View style={styles.tagHeader}>
+          <Label theme={theme}>AVERAGE BY TIME OF DAY</Label>
+          <Puppy size={38} theme={theme} />
+        </View>
         {TAGS.map((t) => {
           const a = byTag[t];
           return (
@@ -79,7 +83,7 @@ export function TrendsScreen({
               <Text style={[styles.tagCount, { color: theme.muted }]}>
                 {a.count === 0 ? 'no readings' : `${a.count} reading${a.count === 1 ? '' : 's'}`}
               </Text>
-              <Text style={[styles.tagAvg, { color: a.avgMgdl === null ? theme.muted : theme.accent }]}>
+              <Text style={[styles.tagAvg, { color: a.avgMgdl === null ? theme.muted : theme.pink }]}>
                 {both(a.avgMgdl)}
               </Text>
             </View>
@@ -97,6 +101,7 @@ export function TrendsScreen({
 const styles = StyleSheet.create({
   body: { padding: 16, gap: 14, paddingBottom: 40 },
   chips: { flexDirection: 'row', gap: 8 },
+  tagHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   stats: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14, columnGap: 18 },
   caption: { fontSize: 11.5, lineHeight: 16 },
   tagRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9, borderTopWidth: 1, gap: 10 },
