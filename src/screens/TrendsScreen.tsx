@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Chart } from '../components/Chart';
-import { Card, Chip, Label, Stat } from '../components/ui';
+import { Chip, Glass, Label, Stat } from '../components/ui';
 import { averagesByTag, summarize, withinDays } from '../lib/stats';
 import { formatMgdl, formatMmol, mgdlToMmol } from '../lib/glucose';
 import { TAGS, TAG_LABELS, type Reading, type TargetRange } from '../lib/types';
-import { Puppy } from '../components/Mascots';
 import type { Theme } from '../theme';
 
 const RANGES = [
@@ -38,21 +37,21 @@ export function TrendsScreen({
         ))}
       </View>
 
-      <Card theme={theme}>
-        <Label theme={theme}>HOW IT'S GOING · mmol/L</Label>
+      <Glass theme={theme}>
+        <Label theme={theme}>Trend · mmol/L</Label>
         <Chart
           readings={inRange} target={target} theme={theme}
-          width={width - 32 - 32} height={190}
+          width={width - 36 - 40} height={190}
         />
         <Text style={[styles.caption, { color: theme.muted }]}>
           Line is the daily average. Each dot is one reading; amber dots fall outside
           your target band of {formatMmol(mgdlToMmol(target.lowMgdl))}–
           {formatMmol(mgdlToMmol(target.highMgdl))} mmol/L.
         </Text>
-      </Card>
+      </Glass>
 
-      <Card theme={theme}>
-        <Label theme={theme}>THE NUMBERS</Label>
+      <Glass theme={theme}>
+        <Label theme={theme}>Summary</Label>
         <View style={styles.stats}>
           <Stat theme={theme} label="Readings" value={String(summary.count)} />
           <Stat theme={theme} label="Average" value={both(summary.avgMgdl)} unit="mmol/L" />
@@ -68,13 +67,10 @@ export function TrendsScreen({
             Average in mg/dL: {formatMgdl(summary.avgMgdl)}
           </Text>
         ) : null}
-      </Card>
+      </Glass>
 
-      <Card theme={theme}>
-        <View style={styles.tagHeader}>
-          <Label theme={theme}>AVERAGE BY TIME OF DAY</Label>
-          <Puppy size={38} theme={theme} />
-        </View>
+      <Glass theme={theme}>
+        <Label theme={theme}>Average by time of day</Label>
         {TAGS.map((t) => {
           const a = byTag[t];
           return (
@@ -83,7 +79,7 @@ export function TrendsScreen({
               <Text style={[styles.tagCount, { color: theme.muted }]}>
                 {a.count === 0 ? 'no readings' : `${a.count} reading${a.count === 1 ? '' : 's'}`}
               </Text>
-              <Text style={[styles.tagAvg, { color: a.avgMgdl === null ? theme.muted : theme.pink }]}>
+              <Text style={[styles.tagAvg, { color: a.avgMgdl === null ? theme.faint : theme.accent }]}>
                 {both(a.avgMgdl)}
               </Text>
             </View>
@@ -93,19 +89,19 @@ export function TrendsScreen({
           A fasting reading and an after-meal reading of the same value mean different
           things, so these are kept apart.
         </Text>
-      </Card>
+      </Glass>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { padding: 16, gap: 14, paddingBottom: 40 },
+  body: { padding: 18, gap: 16, paddingBottom: 40 },
   chips: { flexDirection: 'row', gap: 8 },
   tagHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   stats: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14, columnGap: 18 },
   caption: { fontSize: 11.5, lineHeight: 16 },
-  tagRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9, borderTopWidth: 1, gap: 10 },
+  tagRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, gap: 10 },
   tagName: { fontSize: 14, fontWeight: '600', flex: 1 },
   tagCount: { fontSize: 11 },
-  tagAvg: { fontSize: 17, fontWeight: '700', fontVariant: ['tabular-nums'], minWidth: 44, textAlign: 'right' },
+  tagAvg: { fontSize: 18, fontWeight: '600', fontVariant: ['tabular-nums'], minWidth: 44, textAlign: 'right' },
 });

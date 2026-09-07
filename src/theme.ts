@@ -1,48 +1,66 @@
 export type Theme = typeof light;
 
 /**
- * Candy palette: baby blue at the top of the screen melting into baby pink at
- * the bottom. Numbers still have to be readable at a glance, so text stays a
- * soft plum-navy rather than pastel, and the pastels carry the mood instead.
+ * Frosted glass over a soft colour wash. The palette is deliberately desaturated
+ * compared with the previous pastel version: glass only reads as glass when the
+ * colour sits *behind* it and the card itself stays near-neutral.
  */
 export const light = {
-  bgTop: '#DCF0FF',      // baby blue
-  bgBottom: '#FFE1EC',   // baby pink
-  card: '#FFFFFF',
-  cardAlt: '#FFF7FB',
-  text: '#463C57',
-  muted: '#948AA8',
-  pink: '#FF7FA8',
-  blue: '#4FAFE0',
-  accent: '#4FAFE0',
-  danger: '#F0607F',
-  warn: '#FFA24C',
-  rule: '#F1E6EE',
-  field: '#FBF7FC',
-  band: 'rgba(79,175,224,0.14)',
-  chipOn: '#FF7FA8',
-  chipOnText: '#FFFFFF',
-  tabActive: '#FF7FA8',
-  shadow: '#C9A9BC',
+  isDark: false,
+  base: '#F3F1FA',
+  blobRose: '#FFAECE',
+  blobSky: '#9BC8FF',
+  blobLilac: '#C4B2FF',
+  blobMint: '#A8ECD8',
+
+  glass: 'rgba(255,255,255,0.62)',
+  glassStrong: 'rgba(255,255,255,0.78)',
+  glassBorder: 'rgba(255,255,255,0.85)',
+  glassTint: 'light' as 'light' | 'dark',
+
+  text: '#2C2739',
+  muted: '#6B6483',
+  faint: 'rgba(44,39,57,0.45)',
+
+  accent: '#6F63D8',
+  accentSoft: 'rgba(107,91,230,0.14)',
+  rose: '#E4568F',
+  danger: '#D94A6A',
+  warn: '#E08A2E',
+
+  rule: 'rgba(44,39,57,0.10)',
+  field: 'rgba(255,255,255,0.5)',
+  band: 'rgba(107,91,230,0.10)',
+  onAccent: '#FFFFFF',
+  shadow: '#6E5F8C',
 };
 
 export const dark: Theme = {
-  bgTop: '#232037',
-  bgBottom: '#33253A',
-  card: '#332C46',
-  cardAlt: '#3A3050',
-  text: '#F6EEF8',
-  muted: '#B6A8C8',
-  pink: '#FF9EC4',
-  blue: '#82D2F5',
-  accent: '#82D2F5',
-  danger: '#FF8FA6',
-  warn: '#FFC078',
-  rule: '#453B5C',
-  field: '#2C2540',
-  band: 'rgba(130,210,245,0.16)',
-  chipOn: '#FF9EC4',
-  chipOnText: '#3A1F2C',
-  tabActive: '#FF9EC4',
+  isDark: true,
+  base: '#0E0D18',
+  blobRose: '#5B2748',
+  blobSky: '#1C3A66',
+  blobLilac: '#3A2A63',
+  blobMint: '#1B4A45',
+
+  glass: 'rgba(255,255,255,0.07)',
+  glassStrong: 'rgba(255,255,255,0.11)',
+  glassBorder: 'rgba(255,255,255,0.16)',
+  glassTint: 'dark',
+
+  text: '#EEEBF7',
+  muted: '#A79FC0',
+  faint: 'rgba(238,235,247,0.45)',
+
+  accent: '#A99BFF',
+  accentSoft: 'rgba(169,155,255,0.18)',
+  rose: '#FF8FB8',
+  danger: '#FF8098',
+  warn: '#F0B45E',
+
+  rule: 'rgba(255,255,255,0.10)',
+  field: 'rgba(255,255,255,0.06)',
+  band: 'rgba(169,155,255,0.12)',
+  onAccent: '#1A1526',
   shadow: '#000000',
 };

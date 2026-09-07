@@ -85,7 +85,7 @@ export function Chart({ readings, target, width, height = 200, theme }: Props) {
             <Circle
               key={r.id} cx={x(r.takenAt)} cy={y(r.mgdl)} r={outside ? 2.2 : 1.8}
               fill={outside ? theme.warn : theme.accent}
-              opacity={outside ? 0.85 : 0.32}
+              opacity={outside ? 0.9 : 0.45}
             />
           );
         })}

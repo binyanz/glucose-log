@@ -2,7 +2,6 @@ import { SectionList, StyleSheet, Text, TouchableOpacity, View, Alert } from 're
 import { formatMgdl, formatMmol, mgdlToMmol } from '../lib/glucose';
 import { deleteReading } from '../lib/db';
 import { TAG_LABELS, type Reading } from '../lib/types';
-import { Puppy } from '../components/Mascots';
 import type { Theme } from '../theme';
 
 function dayKey(ts: number) {
@@ -43,10 +42,9 @@ export function HistoryScreen({
   if (readings.length === 0) {
     return (
       <View style={styles.empty}>
-        <Puppy size={92} theme={theme} />
-        <Text style={[styles.emptyTitle, { color: theme.text }]}>Nothing here yet!</Text>
+        <Text style={[styles.emptyTitle, { color: theme.text }]}>No readings yet</Text>
         <Text style={{ color: theme.muted, textAlign: 'center' }}>
-          Save your first reading and it will show up right here.
+          Saved readings appear here, newest first.
         </Text>
       </View>
     );
@@ -66,7 +64,7 @@ export function HistoryScreen({
           onLongPress={() => confirmDelete(item)}
           delayLongPress={400}
           accessibilityHint="Long press to delete this reading"
-          style={[styles.row, { backgroundColor: theme.card, borderColor: theme.rule }]}
+          style={[styles.row, { backgroundColor: theme.glass, borderColor: theme.glassBorder, shadowColor: theme.shadow }]}
         >
           <View style={styles.rowMain}>
             <Text style={[styles.mmol, { color: theme.text }]}>
@@ -78,7 +76,7 @@ export function HistoryScreen({
             </Text>
           </View>
           <View style={styles.rowMeta}>
-            <Text style={[styles.tag, { color: theme.pink }]}>{TAG_LABELS[item.tag]}</Text>
+            <Text style={[styles.tag, { color: theme.accent }]}>{TAG_LABELS[item.tag]}</Text>
             <Text style={[styles.time, { color: theme.muted }]}>{timeOf(item.takenAt)}</Text>
           </View>
         </TouchableOpacity>
@@ -90,17 +88,17 @@ export function HistoryScreen({
 const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 6 },
   emptyTitle: { fontSize: 17, fontWeight: '700' },
-  section: { fontSize: 10.5, letterSpacing: 1.2, fontWeight: '800', marginTop: 16, marginBottom: 7 },
+  section: { fontSize: 10, letterSpacing: 1.6, fontWeight: '700', marginTop: 18, marginBottom: 8 },
   row: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    borderWidth: 1, borderRadius: 20, padding: 15, marginBottom: 9,
-    shadowColor: '#B98BA6', shadowOpacity: 0.13, shadowRadius: 9, shadowOffset: { width: 0, height: 4 },
+    borderWidth: StyleSheet.hairlineWidth * 2, borderRadius: 20, padding: 16, marginBottom: 9,
+    shadowOpacity: 0.10, shadowRadius: 12, shadowOffset: { width: 0, height: 5 },
   },
   rowMain: { gap: 2 },
   rowMeta: { alignItems: 'flex-end', gap: 3 },
-  mmol: { fontSize: 21, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  mmol: { fontSize: 22, fontWeight: '600', fontVariant: ['tabular-nums'], letterSpacing: -0.6 },
   smallUnit: { fontSize: 11, fontWeight: '600' },
   mgdl: { fontSize: 12, fontVariant: ['tabular-nums'] },
-  tag: { fontSize: 12, fontWeight: '800' },
+  tag: { fontSize: 12, fontWeight: '700' },
   time: { fontSize: 12, fontVariant: ['tabular-nums'] },
 });
