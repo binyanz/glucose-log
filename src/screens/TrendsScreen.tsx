@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { Chart } from '../components/Chart';
-import { Chip, Glass, Label, Stat } from '../components/ui';
-import { averagesByTag, summarize, withinDays } from '../lib/stats';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Chip, Section, Sheet, Stat } from '../components/ui';
+import { Logbook } from '../components/Logbook';
+import { columnAverages, dailyRows, weeklyRows } from '../lib/logbook';
+import { summarize, withinDays } from '../lib/stats';
 import { formatMgdl, formatMmol, mgdlToMmol } from '../lib/glucose';
-import { TAGS, TAG_LABELS, type Reading, type TargetRange } from '../lib/types';
-import type { Theme } from '../theme';
+import type { Reading, TargetRange } from '../lib/types';
+import { cellColor, type Theme } from '../theme';
 
 const RANGES = [
   { days: 7, label: '7 days' },
@@ -16,92 +17,85 @@ const RANGES = [
 export function TrendsScreen({
   theme, readings, target,
 }: { theme: Theme; readings: Reading[]; target: TargetRange }) {
-  const [days, setDays] = useState(90);
-  const { width } = useWindowDimensions();
+  const [days, setDays] = useState(30);
+  const now = Date.now();
 
-  const inRange = useMemo(() => withinDays(readings, days, Date.now()), [readings, days]);
+  const inRange = useMemo(() => withinDays(readings, days, now), [readings, days, now]);
+  const rows = useMemo(
+    () => (days > 30 ? weeklyRows(inRange, Math.ceil(days / 7), now) : dailyRows(inRange, days, now)),
+    [inRange, days, now],
+  );
+  const colAvgs = useMemo(() => columnAverages(rows), [rows]);
   const summary = useMemo(() => summarize(inRange, target), [inRange, target]);
-  const byTag = useMemo(() => averagesByTag(inRange), [inRange]);
 
-  const both = (mgdl: number | null) =>
-    mgdl === null ? '—' : `${formatMmol(mgdlToMmol(mgdl))}`;
+  const scaleStops = [target.lowMgdl - 20, target.lowMgdl, (target.lowMgdl + target.highMgdl) / 2,
+    target.highMgdl, target.highMgdl + 70, target.highMgdl + 150];
 
   return (
     <ScrollView contentContainerStyle={styles.body}>
       <View style={styles.chips}>
         {RANGES.map((r) => (
-          <Chip
-            key={r.days} theme={theme} active={days === r.days}
-            label={r.label} onPress={() => setDays(r.days)}
-          />
+          <Chip key={r.days} theme={theme} active={days === r.days} label={r.label} onPress={() => setDays(r.days)} />
         ))}
       </View>
 
-      <Glass theme={theme}>
-        <Label theme={theme}>Trend · mmol/L</Label>
-        <Chart
-          readings={inRange} target={target} theme={theme}
-          width={width - 36 - 40} height={190}
-        />
-        <Text style={[styles.caption, { color: theme.muted }]}>
-          Line is the daily average. Each dot is one reading; amber dots fall outside
-          your target band of {formatMmol(mgdlToMmol(target.lowMgdl))}–
-          {formatMmol(mgdlToMmol(target.highMgdl))} mmol/L.
-        </Text>
-      </Glass>
+      <Section theme={theme} title={days > 30 ? 'Logbook, by week' : 'Logbook'}>
+        <Sheet theme={theme}>
+          <Logbook rows={rows} columnAvgs={colAvgs} target={target} theme={theme} />
+        </Sheet>
 
-      <Glass theme={theme}>
-        <Label theme={theme}>Summary</Label>
+        <View style={styles.legend}>
+          <Text style={[styles.legendText, { color: theme.inkFaint }]}>low</Text>
+          <View style={styles.swatches}>
+            {scaleStops.map((v, i) => (
+              <View
+                key={i}
+                style={[styles.swatch, {
+                  backgroundColor: cellColor(v, target.lowMgdl, target.highMgdl, theme.isDark),
+                  borderColor: theme.rule,
+                }]}
+              />
+            ))}
+          </View>
+          <Text style={[styles.legendText, { color: theme.inkFaint }]}>high</Text>
+          <Text style={[styles.legendNote, { color: theme.inkFaint }]}>
+            dashed = not measured
+          </Text>
+        </View>
+      </Section>
+
+      <Section theme={theme} title="Summary">
         <View style={styles.stats}>
-          <Stat theme={theme} label="Readings" value={String(summary.count)} />
-          <Stat theme={theme} label="Average" value={both(summary.avgMgdl)} unit="mmol/L" />
-          <Stat theme={theme} label="Lowest" value={both(summary.minMgdl)} />
-          <Stat theme={theme} label="Highest" value={both(summary.maxMgdl)} />
-          <Stat
-            theme={theme} label="In target"
-            value={summary.inRangePct === null ? '—' : `${Math.round(summary.inRangePct)}%`}
-          />
+          <Stat theme={theme} label="readings" value={String(summary.count)} />
+          <Stat theme={theme} label="average"
+            value={summary.avgMgdl === null ? '—' : formatMmol(mgdlToMmol(summary.avgMgdl))} unit=" mmol/L" />
+          <Stat theme={theme} label="lowest"
+            value={summary.minMgdl === null ? '—' : formatMmol(mgdlToMmol(summary.minMgdl))} />
+          <Stat theme={theme} label="highest"
+            value={summary.maxMgdl === null ? '—' : formatMmol(mgdlToMmol(summary.maxMgdl))} />
+          <Stat theme={theme} label="in target"
+            value={summary.inRangePct === null ? '—' : `${Math.round(summary.inRangePct)}%`} />
         </View>
         {summary.avgMgdl !== null ? (
-          <Text style={[styles.caption, { color: theme.muted }]}>
-            Average in mg/dL: {formatMgdl(summary.avgMgdl)}
+          <Text style={[styles.note, { color: theme.inkFaint }]}>
+            Average in mg/dL is {formatMgdl(summary.avgMgdl)}. Your target range is{' '}
+            {formatMmol(mgdlToMmol(target.lowMgdl))}–{formatMmol(mgdlToMmol(target.highMgdl))} mmol/L,
+            which you set yourself.
           </Text>
         ) : null}
-      </Glass>
-
-      <Glass theme={theme}>
-        <Label theme={theme}>Average by time of day</Label>
-        {TAGS.map((t) => {
-          const a = byTag[t];
-          return (
-            <View key={t} style={[styles.tagRow, { borderColor: theme.rule }]}>
-              <Text style={[styles.tagName, { color: theme.text }]}>{TAG_LABELS[t]}</Text>
-              <Text style={[styles.tagCount, { color: theme.muted }]}>
-                {a.count === 0 ? 'no readings' : `${a.count} reading${a.count === 1 ? '' : 's'}`}
-              </Text>
-              <Text style={[styles.tagAvg, { color: a.avgMgdl === null ? theme.faint : theme.accent }]}>
-                {both(a.avgMgdl)}
-              </Text>
-            </View>
-          );
-        })}
-        <Text style={[styles.caption, { color: theme.muted }]}>
-          A fasting reading and an after-meal reading of the same value mean different
-          things, so these are kept apart.
-        </Text>
-      </Glass>
+      </Section>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { padding: 18, gap: 16, paddingBottom: 40 },
+  body: { padding: 16, gap: 24, paddingBottom: 40 },
   chips: { flexDirection: 'row', gap: 8 },
-  tagHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  stats: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14, columnGap: 18 },
-  caption: { fontSize: 11.5, lineHeight: 16 },
-  tagRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, gap: 10 },
-  tagName: { fontSize: 14, fontWeight: '600', flex: 1 },
-  tagCount: { fontSize: 11 },
-  tagAvg: { fontSize: 18, fontWeight: '600', fontVariant: ['tabular-nums'], minWidth: 44, textAlign: 'right' },
+  legend: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  legendText: { fontSize: 11 },
+  swatches: { flexDirection: 'row', gap: 2 },
+  swatch: { width: 22, height: 12, borderRadius: 2, borderWidth: StyleSheet.hairlineWidth },
+  legendNote: { fontSize: 11, marginLeft: 'auto' },
+  stats: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14, columnGap: 22 },
+  note: { fontSize: 12, lineHeight: 17 },
 });
