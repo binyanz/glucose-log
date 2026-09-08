@@ -4,6 +4,7 @@ import {
   TouchableOpacity, View, useColorScheme, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { Backdrop } from './src/components/Backdrop';
 import { LogScreen } from './src/screens/LogScreen';
 import { HistoryScreen } from './src/screens/HistoryScreen';
 import { TrendsScreen } from './src/screens/TrendsScreen';
@@ -47,6 +48,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <View style={[styles.root, { backgroundColor: theme.page }]}>
+        <Backdrop theme={theme} width={width} height={height} />
         <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
           <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
 
@@ -73,7 +75,7 @@ export default function App() {
             )}
           </View>
 
-          <View style={[styles.tabsWrap, { backgroundColor: theme.paper, borderTopColor: theme.rule }]}>
+          <View style={[styles.tabsWrap, { backgroundColor: theme.paper, borderTopColor: theme.ruleStrong }]}>
             <View style={styles.tabs}>
               {TABS.map((t) => {
                 const active = tab === t.key;

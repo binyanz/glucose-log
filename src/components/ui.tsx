@@ -56,7 +56,11 @@ export function Stat({ theme, label, value, unit }: { theme: Theme; label: strin
 }
 
 const s = StyleSheet.create({
-  sheet: { borderRadius: 6, borderWidth: StyleSheet.hairlineWidth, padding: 14 },
+  sheet: {
+    borderRadius: 8, borderWidth: StyleSheet.hairlineWidth, padding: 14,
+    shadowColor: '#3A3357', shadowOpacity: 0.10, shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 }, elevation: 2,
+  },
   section: { gap: 10 },
   sectionTitle: { fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
   chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 4, borderWidth: 1 },

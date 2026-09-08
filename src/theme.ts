@@ -7,8 +7,18 @@ export type Theme = typeof light;
  */
 export const light = {
   isDark: false,
-  paper: '#FFFFFF',
-  page: '#F4F5F7',
+  // The logbook page is opaque enough to keep the grid crisp, but sits on a
+  // soft colour wash rather than flat white - the page lying on a surface.
+  paper: 'rgba(255,255,255,0.90)',
+  page: '#F1F0F7',
+  base: '#F1F0F7',
+  blobSky: '#B6D6FF',
+  blobRose: '#FFC2DA',
+  blobLilac: '#D2C4FF',
+  blobMint: '#BCEEE0',
+  band: 'rgba(47,95,208,0.09)',
+  warn: '#D9822B',
+  muted: '#5A6270',
   ink: '#191C20',
   inkSoft: '#5A6270',
   inkFaint: '#8D96A3',
@@ -23,8 +33,16 @@ export const light = {
 
 export const dark: Theme = {
   isDark: true,
-  paper: '#15181C',
-  page: '#0D0F12',
+  paper: 'rgba(24,27,33,0.88)',
+  page: '#0F1016',
+  base: '#0F1016',
+  blobSky: '#1B3A63',
+  blobRose: '#4E2440',
+  blobLilac: '#33265A',
+  blobMint: '#17423E',
+  band: 'rgba(123,160,245,0.12)',
+  warn: '#E0A050',
+  muted: '#A0A9B5',
   ink: '#E8EBEF',
   inkSoft: '#A0A9B5',
   inkFaint: '#6E7885',

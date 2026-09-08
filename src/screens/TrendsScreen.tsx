@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Chip, Section, Sheet, Stat } from '../components/ui';
 import { Logbook } from '../components/Logbook';
+import { Chart } from '../components/Chart';
 import { columnAverages, dailyRows, weeklyRows } from '../lib/logbook';
 import { summarize, withinDays } from '../lib/stats';
 import { formatMgdl, formatMmol, mgdlToMmol } from '../lib/glucose';
@@ -19,6 +20,7 @@ export function TrendsScreen({
 }: { theme: Theme; readings: Reading[]; target: TargetRange }) {
   const [days, setDays] = useState(30);
   const now = Date.now();
+  const { width } = useWindowDimensions();
 
   const inRange = useMemo(() => withinDays(readings, days, now), [readings, days, now]);
   const rows = useMemo(
@@ -38,6 +40,16 @@ export function TrendsScreen({
           <Chip key={r.days} theme={theme} active={days === r.days} label={r.label} onPress={() => setDays(r.days)} />
         ))}
       </View>
+
+      <Section theme={theme} title="At a glance">
+        <Sheet theme={theme}>
+          <Chart readings={inRange} target={target} theme={theme} width={width - 32 - 28} height={170} />
+        </Sheet>
+        <Text style={[styles.note, { color: theme.inkFaint }]}>
+          The line is each day's average; every dot is one reading. Amber dots sit outside
+          your target band.
+        </Text>
+      </Section>
 
       <Section theme={theme} title={days > 30 ? 'Logbook, by week' : 'Logbook'}>
         <Sheet theme={theme}>
