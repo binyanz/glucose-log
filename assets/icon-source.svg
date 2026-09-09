@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FCFEFB"/>
+      <stop offset="100%" stop-color="#E4F0DF"/>
+    </linearGradient>
+    <linearGradient id="apple" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0%" stop-color="#7CC94F"/>
+      <stop offset="55%" stop-color="#57AC3C"/>
+      <stop offset="100%" stop-color="#3A8A2C"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6DBB45"/>
+      <stop offset="100%" stop-color="#3F8B2E"/>
+    </linearGradient>
+  </defs>
+
+  <!-- iOS applies its own corner mask, so the artwork is a full opaque square -->
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+
+  <!-- apple body -->
+  <path fill="url(#apple)" d="
+    M512 336
+    C 460 274, 368 262, 298 296
+    C 202 342, 152 456, 166 588
+    C 180 732, 288 880, 398 920
+    C 446 938, 486 918, 512 918
+    C 538 918, 578 938, 626 920
+    C 736 880, 844 732, 858 588
+    C 872 456, 822 342, 726 296
+    C 656 262, 564 274, 512 336 Z"/>
+
+  <!-- highlight on the left cheek -->
+  <ellipse cx="330" cy="470" rx="78" ry="112" fill="#FFFFFF" opacity="0.16" transform="rotate(-22 330 470)"/>
+
+  <!-- stem -->
+  <path d="M512 330 C 522 268, 542 226, 574 196" stroke="#7A5636" stroke-width="30" stroke-linecap="round" fill="none"/>
+
+  <!-- leaf -->
+  <path fill="url(#leaf)" d="M498 276 C 452 206, 356 196, 306 236 C 348 312, 448 330, 498 276 Z"/>
+  <path d="M498 276 C 440 254, 372 244, 312 240" stroke="#2F6E22" stroke-width="9" fill="none" opacity="0.55" stroke-linecap="round"/>
+
+  <!-- ============ balance scale, carried inside the apple ============ -->
+  <g fill="#FFFFFF">
+    <!-- base and upright post -->
+    <rect x="430" y="724" width="164" height="30" rx="15"/>
+    <rect x="474" y="700" width="76" height="30" rx="12"/>
+    <rect x="497" y="512" width="30" height="200" rx="12"/>
+    <!-- beam -->
+    <rect x="322" y="486" width="380" height="30" rx="15"/>
+    <!-- fulcrum -->
+    <circle cx="512" cy="501" r="34"/>
+  </g>
+
+  <!-- hanging cords -->
+  <g stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" fill="none">
+    <path d="M348 516 L 306 566 M348 516 L 390 566"/>
+    <path d="M676 516 L 634 566 M676 516 L 718 566"/>
+  </g>
+
+  <!-- pans -->
+  <g fill="#FFFFFF">
+    <path d="M292 562 Q348 634, 404 562 Z"/>
+    <path d="M620 562 Q676 634, 732 562 Z"/>
+  </g>
+  <circle cx="348" cy="513" r="12" fill="#FFFFFF"/>
+  <circle cx="676" cy="513" r="12" fill="#FFFFFF"/>
+</svg>
