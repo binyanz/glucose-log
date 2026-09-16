@@ -10,7 +10,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.brynn.glucoselog",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Sugar Diary uses the camera to photograph a meal so it can estimate its carb content.",
+        "NSPhotoLibraryUsageDescription": "Sugar Diary can use a photo from your library to estimate a meal's carb content."
       }
     },
     "android": {
@@ -26,7 +28,24 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Sugar Diary uses the camera to photograph a meal so it can estimate its carb content.",
+          "photosPermission": "Sugar Diary can use a photo from your library to estimate a meal's carb content.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.0"
+          }
+        }
+      ]
     ]
   }
 }

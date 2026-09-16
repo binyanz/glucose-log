@@ -6,17 +6,22 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Backdrop } from './src/components/Backdrop';
 import { LogScreen } from './src/screens/LogScreen';
+import { MealScreen } from './src/screens/MealScreen';
 import { HistoryScreen } from './src/screens/HistoryScreen';
 import { TrendsScreen } from './src/screens/TrendsScreen';
-import { getTarget, listReadings } from './src/lib/db';
+import { SettingsScreen } from './src/screens/SettingsScreen';
+import { getTarget, listMeals, listReadings } from './src/lib/db';
 import { DEFAULT_TARGET, type Reading, type TargetRange } from './src/lib/types';
+import type { Meal } from './src/lib/mealtypes';
 import { dark, light } from './src/theme';
 
-type Tab = 'log' | 'history' | 'trends';
+type Tab = 'log' | 'meal' | 'history' | 'trends' | 'settings';
 const TABS: { key: Tab; label: string }[] = [
   { key: 'log', label: 'Log' },
+  { key: 'meal', label: 'Meal' },
   { key: 'history', label: 'History' },
   { key: 'trends', label: 'Trends' },
+  { key: 'settings', label: 'Settings' },
 ];
 
 export default function App() {
@@ -26,14 +31,16 @@ export default function App() {
 
   const [tab, setTab] = useState<Tab>('log');
   const [readings, setReadings] = useState<Reading[]>([]);
+  const [meals, setMeals] = useState<Meal[]>([]);
   const [target, setTargetState] = useState<TargetRange>(DEFAULT_TARGET);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
-      const [rows, t] = await Promise.all([listReadings(), getTarget()]);
+      const [rows, mealRows, t] = await Promise.all([listReadings(), listMeals(), getTarget()]);
       setReadings(rows);
+      setMeals(mealRows);
       setTargetState(t);
       setError(null);
     } catch (e) {
@@ -68,10 +75,14 @@ export default function App() {
               </View>
             ) : tab === 'log' ? (
               <LogScreen theme={theme} onSaved={refresh} />
+            ) : tab === 'meal' ? (
+              <MealScreen theme={theme} onSaved={refresh} />
             ) : tab === 'history' ? (
-              <HistoryScreen theme={theme} readings={readings} target={target} onChanged={refresh} />
-            ) : (
+              <HistoryScreen theme={theme} readings={readings} meals={meals} target={target} onChanged={refresh} />
+            ) : tab === 'trends' ? (
               <TrendsScreen theme={theme} readings={readings} target={target} />
+            ) : (
+              <SettingsScreen theme={theme} />
             )}
           </View>
 
