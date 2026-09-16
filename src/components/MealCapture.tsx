@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Image, Keyboard, ScrollView, StyleSheet,
-  Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, Alert, Image, Keyboard, KeyboardAvoidingView, Platform,
+  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { analyzeFood } from '../lib/analyzeFood';
@@ -10,21 +10,36 @@ import { getApiKey } from '../lib/apiKey';
 import { addMeal, listReadingsWithMeals } from '../lib/db';
 import { estimatePostMeal, MIN_SAMPLES } from '../lib/mealEstimate';
 import { formatMmol, mgdlToMmol } from '../lib/glucose';
-import type { FoodItem } from '../lib/mealtypes';
-import { Section, Sheet } from '../components/ui';
+import type { FoodItem, Meal } from '../lib/mealtypes';
+import { Section, Sheet } from './ui';
 import type { Theme } from '../theme';
 
 type Stage = 'idle' | 'analyzing' | 'reviewing' | 'saving';
+type Estimate = ReturnType<typeof estimatePostMeal>;
 
 const newItem = (): FoodItem => ({ id: `${Date.now()}-${Math.random()}`, name: '', portion: '', carbsG: 0, sugarG: 0 });
 
-export function MealScreen({ theme, onSaved }: { theme: Theme; onSaved: () => void }) {
+/**
+ * The capture -> analyze -> review -> save flow, as a standalone piece rather
+ * than a top-level screen, so it can be opened wherever logging a meal makes
+ * sense (currently: attached inline to a glucose reading) instead of forcing
+ * a trip to a separate tab.
+ */
+export function MealCapture({
+  theme, onSaved, onCancel, onOpenSettings,
+}: {
+  theme: Theme;
+  onSaved: (meal: Meal) => void;
+  onCancel: () => void;
+  onOpenSettings?: () => void;
+}) {
   const [stage, setStage] = useState<Stage>('idle');
   const [rawUri, setRawUri] = useState<string | null>(null);
   const [items, setItems] = useState<FoodItem[]>([]);
   const [confidence, setConfidence] = useState<'low' | 'medium' | 'high' | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [estimate, setEstimate] = useState<ReturnType<typeof estimatePostMeal> | null>(null);
+  const [noApiKey, setNoApiKey] = useState(false);
+  const [estimate, setEstimate] = useState<Estimate | null>(null);
 
   const totalCarbs = useMemo(() => items.reduce((s, it) => s + it.carbsG, 0), [items]);
   const totalSugar = useMemo(() => items.reduce((s, it) => s + it.sugarG, 0), [items]);
@@ -52,10 +67,12 @@ export function MealScreen({ theme, onSaved }: { theme: Theme; onSaved: () => vo
     const asset = result.assets[0];
     setRawUri(asset.uri);
     setError(null);
+    setNoApiKey(false);
 
     const apiKey = await getApiKey();
     if (!apiKey) {
-      setError('No API key set. Add one in Settings, or enter the food below by hand.');
+      setError('No API key set yet, so this photo can’t be auto-recognized.');
+      setNoApiKey(true);
       setItems([newItem()]);
       setStage('reviewing');
       return;
@@ -86,6 +103,7 @@ export function MealScreen({ theme, onSaved }: { theme: Theme; onSaved: () => vo
     setItems([newItem()]);
     setConfidence(null);
     setError(null);
+    setNoApiKey(false);
     setStage('reviewing');
   }
 
@@ -101,10 +119,6 @@ export function MealScreen({ theme, onSaved }: { theme: Theme; onSaved: () => vo
     refreshEstimate(next.reduce((s, it) => s + it.carbsG, 0));
   }
 
-  function reset() {
-    setStage('idle'); setRawUri(null); setItems([]); setConfidence(null); setError(null); setEstimate(null);
-  }
-
   async function save() {
     const cleanItems = items
       .map((it) => ({ ...it, name: it.name.trim(), portion: it.portion.trim() || '1 serving' }))
@@ -115,21 +129,33 @@ export function MealScreen({ theme, onSaved }: { theme: Theme; onSaved: () => vo
     }
     setStage('saving');
     try {
+      const takenAt = Date.now();
       const photoUri = rawUri ? (await stylizeMealPhoto(rawUri)).uri : null;
-      await addMeal(Date.now(), photoUri, cleanItems, null);
+      const id = await addMeal(takenAt, photoUri, cleanItems, null);
+      const carbsG = cleanItems.reduce((s, it) => s + it.carbsG, 0);
+      const sugarG = cleanItems.reduce((s, it) => s + it.sugarG, 0);
       Keyboard.dismiss();
-      onSaved();
-      reset();
+      onSaved({ id, takenAt, photoUri, items: cleanItems, totalCarbsG: carbsG, totalSugarG: sugarG, note: null });
     } catch (e) {
       Alert.alert('Could not save', e instanceof Error ? e.message : 'Something went wrong.');
       setStage('reviewing');
     }
   }
 
+  const Header = ({ title }: { title: string }) => (
+    <View style={styles.header}>
+      <Text style={[styles.headerTitle, { color: theme.ink }]}>{title}</Text>
+      <TouchableOpacity onPress={onCancel} hitSlop={10}>
+        <Text style={[styles.link, { color: theme.inkSoft }]}>Close</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   if (stage === 'idle') {
     return (
-      <ScrollView contentContainerStyle={styles.body}>
-        <Section theme={theme} title="Log a meal">
+      <View style={styles.flex}>
+        <Header title="Log a meal" />
+        <ScrollView contentContainerStyle={styles.body}>
           <Sheet theme={theme}>
             <Text style={[styles.hint, { color: theme.inkSoft }]}>
               A photo gets you a rough carb estimate you can correct. Estimates from a
@@ -147,95 +173,111 @@ export function MealScreen({ theme, onSaved }: { theme: Theme; onSaved: () => vo
               </TouchableOpacity>
             </View>
           </Sheet>
-        </Section>
-      </ScrollView>
+        </ScrollView>
+      </View>
     );
   }
 
   if (stage === 'analyzing') {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color={theme.accent} />
-        <Text style={{ color: theme.inkSoft, marginTop: 10 }}>Looking at the photo…</Text>
+      <View style={styles.flex}>
+        <Header title="Log a meal" />
+        <View style={styles.center}>
+          <ActivityIndicator color={theme.accent} />
+          <Text style={{ color: theme.inkSoft, marginTop: 10 }}>Looking at the photo…</Text>
+        </View>
       </View>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-      {rawUri ? <Image source={{ uri: rawUri }} style={styles.preview} /> : null}
-      {error ? <Text style={[styles.error, { color: theme.danger }]}>{error}</Text> : null}
-      {confidence === 'low' ? (
-        <Text style={[styles.hint, { color: theme.inkSoft }]}>
-          Low confidence on this one - double-check the items below.
-        </Text>
-      ) : null}
-
-      <Section theme={theme} title="Food items">
-        {items.map((it) => (
-          <Sheet key={it.id} theme={theme} style={styles.itemSheet}>
-            <TextInput
-              style={[styles.itemName, { color: theme.ink }]}
-              value={it.name} onChangeText={(v) => updateItem(it.id, { name: v })}
-              placeholder="Food name" placeholderTextColor={theme.inkFaint}
-            />
-            <TextInput
-              style={[styles.itemPortion, { color: theme.inkSoft }]}
-              value={it.portion} onChangeText={(v) => updateItem(it.id, { portion: v })}
-              placeholder="portion, e.g. 1 cup" placeholderTextColor={theme.inkFaint}
-            />
-            <View style={styles.gramsRow}>
-              <View style={styles.gramField}>
-                <Text style={[styles.gramLabel, { color: theme.inkSoft }]}>carbs g</Text>
-                <TextInput
-                  style={[styles.gramInput, { color: theme.ink, borderColor: theme.ruleStrong }]}
-                  value={String(it.carbsG)} keyboardType="numeric"
-                  onChangeText={(v) => updateItem(it.id, { carbsG: Math.max(0, parseFloat(v) || 0) })}
-                />
-              </View>
-              <View style={styles.gramField}>
-                <Text style={[styles.gramLabel, { color: theme.inkSoft }]}>sugar g</Text>
-                <TextInput
-                  style={[styles.gramInput, { color: theme.ink, borderColor: theme.ruleStrong }]}
-                  value={String(it.sugarG)} keyboardType="numeric"
-                  onChangeText={(v) => updateItem(it.id, { sugarG: Math.max(0, parseFloat(v) || 0) })}
-                />
-              </View>
-              <TouchableOpacity onPress={() => removeItem(it.id)} style={styles.removeBtn}>
-                <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '600' }}>Remove</Text>
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+    >
+      <Header title="Review the meal" />
+      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        {rawUri ? <Image source={{ uri: rawUri }} style={styles.preview} /> : null}
+        {error ? (
+          <View>
+            <Text style={[styles.error, { color: theme.danger }]}>{error}</Text>
+            {noApiKey && onOpenSettings ? (
+              <TouchableOpacity onPress={onOpenSettings}>
+                <Text style={[styles.link, { color: theme.accent }]}>Add an API key in Settings →</Text>
               </TouchableOpacity>
-            </View>
-          </Sheet>
-        ))}
-        <TouchableOpacity onPress={() => setItems([...items, newItem()])}>
-          <Text style={[styles.link, { color: theme.accent }]}>+ Add another item</Text>
+            ) : null}
+          </View>
+        ) : null}
+        {confidence === 'low' ? (
+          <Text style={[styles.hint, { color: theme.inkSoft }]}>
+            Low confidence on this one - double-check the items below.
+          </Text>
+        ) : null}
+
+        <Section theme={theme} title="Food items">
+          {items.map((it) => (
+            <Sheet key={it.id} theme={theme} style={styles.itemSheet}>
+              <TextInput
+                style={[styles.itemName, { color: theme.ink }]}
+                value={it.name} onChangeText={(v) => updateItem(it.id, { name: v })}
+                placeholder="Food name" placeholderTextColor={theme.inkFaint}
+              />
+              <TextInput
+                style={[styles.itemPortion, { color: theme.inkSoft }]}
+                value={it.portion} onChangeText={(v) => updateItem(it.id, { portion: v })}
+                placeholder="portion, e.g. 1 cup" placeholderTextColor={theme.inkFaint}
+              />
+              <View style={styles.gramsRow}>
+                <View style={styles.gramField}>
+                  <Text style={[styles.gramLabel, { color: theme.inkSoft }]}>carbs g</Text>
+                  <TextInput
+                    style={[styles.gramInput, { color: theme.ink, borderColor: theme.ruleStrong }]}
+                    value={String(it.carbsG)} keyboardType="numeric"
+                    onChangeText={(v) => updateItem(it.id, { carbsG: Math.max(0, parseFloat(v) || 0) })}
+                  />
+                </View>
+                <View style={styles.gramField}>
+                  <Text style={[styles.gramLabel, { color: theme.inkSoft }]}>sugar g</Text>
+                  <TextInput
+                    style={[styles.gramInput, { color: theme.ink, borderColor: theme.ruleStrong }]}
+                    value={String(it.sugarG)} keyboardType="numeric"
+                    onChangeText={(v) => updateItem(it.id, { sugarG: Math.max(0, parseFloat(v) || 0) })}
+                  />
+                </View>
+                <TouchableOpacity onPress={() => removeItem(it.id)} style={styles.removeBtn}>
+                  <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '600' }}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            </Sheet>
+          ))}
+          <TouchableOpacity onPress={() => setItems([...items, newItem()])}>
+            <Text style={[styles.link, { color: theme.accent }]}>+ Add another item</Text>
+          </TouchableOpacity>
+        </Section>
+
+        <Sheet theme={theme}>
+          <View style={styles.totalsRow}>
+            <Text style={[styles.totalsLabel, { color: theme.inkSoft }]}>Total carbs</Text>
+            <Text style={[styles.totalsValue, { color: theme.ink }]}>{totalCarbs.toFixed(0)} g</Text>
+          </View>
+          <View style={styles.totalsRow}>
+            <Text style={[styles.totalsLabel, { color: theme.inkSoft }]}>Total sugar</Text>
+            <Text style={[styles.totalsValue, { color: theme.ink }]}>{totalSugar.toFixed(0)} g</Text>
+          </View>
+        </Sheet>
+
+        {estimate ? <EstimateCard theme={theme} estimate={estimate} /> : null}
+
+        <TouchableOpacity onPress={save} disabled={stage === 'saving'} style={[styles.bigBtn, { backgroundColor: theme.accent }]}>
+          <Text style={[styles.bigBtnText, { color: theme.onAccent }]}>{stage === 'saving' ? 'Saving…' : 'Save meal'}</Text>
         </TouchableOpacity>
-      </Section>
-
-      <Sheet theme={theme}>
-        <View style={styles.totalsRow}>
-          <Text style={[styles.totalsLabel, { color: theme.inkSoft }]}>Total carbs</Text>
-          <Text style={[styles.totalsValue, { color: theme.ink }]}>{totalCarbs.toFixed(0)} g</Text>
-        </View>
-        <View style={styles.totalsRow}>
-          <Text style={[styles.totalsLabel, { color: theme.inkSoft }]}>Total sugar</Text>
-          <Text style={[styles.totalsValue, { color: theme.ink }]}>{totalSugar.toFixed(0)} g</Text>
-        </View>
-      </Sheet>
-
-      {estimate ? <EstimateCard theme={theme} estimate={estimate} /> : null}
-
-      <TouchableOpacity onPress={save} disabled={stage === 'saving'} style={[styles.bigBtn, { backgroundColor: theme.accent }]}>
-        <Text style={[styles.bigBtnText, { color: theme.onAccent }]}>{stage === 'saving' ? 'Saving…' : 'Save meal'}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={reset}>
-        <Text style={[styles.link, { color: theme.inkFaint, textAlign: 'center' }]}>Cancel</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-function EstimateCard({ theme, estimate }: { theme: Theme; estimate: ReturnType<typeof estimatePostMeal> }) {
+function EstimateCard({ theme, estimate }: { theme: Theme; estimate: Estimate }) {
   return (
     <Section theme={theme} title="Based on your own history">
       <Sheet theme={theme}>
@@ -265,7 +307,13 @@ function EstimateCard({ theme, estimate }: { theme: Theme; estimate: ReturnType<
 }
 
 const styles = StyleSheet.create({
-  body: { padding: 16, gap: 16, paddingBottom: 40 },
+  flex: { flex: 1 },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 14,
+  },
+  headerTitle: { fontSize: 17, fontWeight: '700' },
+  body: { padding: 16, paddingTop: 0, gap: 16, paddingBottom: 40 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   hint: { fontSize: 12.5, lineHeight: 18 },
   error: { fontSize: 12.5, lineHeight: 18, paddingHorizontal: 2 },

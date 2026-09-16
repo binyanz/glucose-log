@@ -6,7 +6,6 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Backdrop } from './src/components/Backdrop';
 import { LogScreen } from './src/screens/LogScreen';
-import { MealScreen } from './src/screens/MealScreen';
 import { HistoryScreen } from './src/screens/HistoryScreen';
 import { TrendsScreen } from './src/screens/TrendsScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
@@ -15,10 +14,9 @@ import { DEFAULT_TARGET, type Reading, type TargetRange } from './src/lib/types'
 import type { Meal } from './src/lib/mealtypes';
 import { dark, light } from './src/theme';
 
-type Tab = 'log' | 'meal' | 'history' | 'trends' | 'settings';
+type Tab = 'log' | 'history' | 'trends' | 'settings';
 const TABS: { key: Tab; label: string }[] = [
   { key: 'log', label: 'Log' },
-  { key: 'meal', label: 'Meal' },
   { key: 'history', label: 'History' },
   { key: 'trends', label: 'Trends' },
   { key: 'settings', label: 'Settings' },
@@ -74,9 +72,7 @@ export default function App() {
                 <Text style={{ color: theme.danger, textAlign: 'center' }}>{error}</Text>
               </View>
             ) : tab === 'log' ? (
-              <LogScreen theme={theme} onSaved={refresh} />
-            ) : tab === 'meal' ? (
-              <MealScreen theme={theme} onSaved={refresh} />
+              <LogScreen theme={theme} onSaved={refresh} onOpenSettings={() => setTab('settings')} />
             ) : tab === 'history' ? (
               <HistoryScreen theme={theme} readings={readings} meals={meals} target={target} onChanged={refresh} />
             ) : tab === 'trends' ? (

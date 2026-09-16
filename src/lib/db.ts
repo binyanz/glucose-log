@@ -68,21 +68,26 @@ const toReading = (r: Row): Reading => ({
 const MEAL_LOOKBACK_MS = 2.5 * 60 * 60 * 1000;
 
 export async function addReading(
-  mgdl: number, takenAt: number, tag: Tag, note?: string | null,
+  mgdl: number, takenAt: number, tag: Tag, note?: string | null, explicitMealId?: number,
 ): Promise<number> {
   const db = await getDb();
 
-  // Silently link to the most recent meal within the lookback window, if any,
-  // so post-meal comparisons work without the user manually tagging a reading
-  // to a specific meal.
-  const recentMeal = await db.getFirstAsync<{ id: number }>(
-    'SELECT id FROM meals WHERE taken_at <= ? AND taken_at >= ? ORDER BY taken_at DESC LIMIT 1',
-    takenAt, takenAt - MEAL_LOOKBACK_MS,
-  );
+  // A meal attached by hand while logging this reading always wins. Otherwise,
+  // fall back to silently linking the most recent meal within the lookback
+  // window, so post-meal comparisons still work without the user having to
+  // attach one every time.
+  let mealId: number | null = explicitMealId ?? null;
+  if (mealId === null) {
+    const recentMeal = await db.getFirstAsync<{ id: number }>(
+      'SELECT id FROM meals WHERE taken_at <= ? AND taken_at >= ? ORDER BY taken_at DESC LIMIT 1',
+      takenAt, takenAt - MEAL_LOOKBACK_MS,
+    );
+    mealId = recentMeal?.id ?? null;
+  }
 
   const res = await db.runAsync(
     'INSERT INTO readings (mgdl, taken_at, tag, note, meal_id) VALUES (?, ?, ?, ?, ?)',
-    mgdl, takenAt, tag, note ?? null, recentMeal?.id ?? null,
+    mgdl, takenAt, tag, note ?? null, mealId,
   );
   return res.lastInsertRowId;
 }
